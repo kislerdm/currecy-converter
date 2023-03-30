@@ -108,7 +108,7 @@ func validateRates(rates DailyRates) error {
 	return nil
 }
 
-//go:embed conversion_rate.xml
+//go:embed conversion_rate_usd2eur.xml
 var ratesDaily []byte
 
 func newRatesDefault() DailyRates {
