@@ -1,4 +1,4 @@
-package main
+package converter
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ func Test_newRatesDefault(t *testing.T) {
 			// the test date is Sunday
 			const testDate = "2023-01-01"
 			// the value is taken from Friday of the prev. week
-			const wantValue float32 = 1.0666
+			const wantValue float64 = 1.0666
 
 			wantDate, err := time.Parse("2006-01-02", testDate)
 			if err != nil {
@@ -43,9 +43,9 @@ func Test_newRatesDefault(t *testing.T) {
 
 func TestNewConverterDaily(t *testing.T) {
 	type args struct {
-		rates USD2EURRates
+		rates DailyRates
 	}
-	var customRates = USD2EURRates{
+	var customRates = DailyRates{
 		time.Date(2022, 12, 30, 0, 0, 0, 0, &time.Location{}): 1.0666,
 	}
 	tests := []struct {
@@ -75,7 +75,7 @@ func TestNewConverterDaily(t *testing.T) {
 		{
 			name: "unhappy path: empty rates",
 			args: args{
-				rates: USD2EURRates{},
+				rates: DailyRates{},
 			},
 			want:    nil,
 			wantErr: true,
@@ -84,13 +84,13 @@ func TestNewConverterDaily(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := NewConverterDaily(tt.args.rates)
+				got, err := NewConverter(tt.args.rates)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("NewConverterDaily() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("NewConverter() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("NewConverterDaily() got = %v, want %v", got, tt.want)
+					t.Errorf("NewConverter() got = %v, want %v", got, tt.want)
 				}
 			},
 		)
@@ -99,7 +99,7 @@ func TestNewConverterDaily(t *testing.T) {
 
 func Test_validateRates(t *testing.T) {
 	type args struct {
-		rates USD2EURRates
+		rates DailyRates
 	}
 	tests := []struct {
 		name    string
@@ -116,7 +116,7 @@ func Test_validateRates(t *testing.T) {
 		{
 			name: "error: rate from future",
 			args: args{
-				rates: USD2EURRates{
+				rates: DailyRates{
 					time.Date(
 						9999, 12, 31, 23, 59, 59, 999999999,
 						&time.Location{},
@@ -128,7 +128,7 @@ func Test_validateRates(t *testing.T) {
 		{
 			name: "error: negative rate",
 			args: args{
-				rates: USD2EURRates{
+				rates: DailyRates{
 					time.Date(
 						2000, 12, 31, 23, 59, 59, 999999999,
 						&time.Location{},
@@ -161,9 +161,9 @@ func TestEUR2USDRates_GetRate(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		r       USD2EURRates
+		r       DailyRates
 		args    args
-		want    float32
+		want    float64
 		wantErr bool
 	}{
 		{
@@ -177,7 +177,7 @@ func TestEUR2USDRates_GetRate(t *testing.T) {
 		},
 		{
 			name: "unhappy path: rate not found",
-			r: USD2EURRates{
+			r: DailyRates{
 				time.Date(2000, 12, 31, 0, 0, 0, 0, time.UTC): -1.0666,
 			},
 			args: args{
@@ -206,17 +206,17 @@ func TestEUR2USDRates_GetRate(t *testing.T) {
 
 func Test_converter_USD2EUR(t *testing.T) {
 	type fields struct {
-		rates USD2EURRates
+		rates DailyRates
 	}
 	type args struct {
 		date time.Time
-		v    float32
+		v    float64
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    float32
+		want    float64
 		wantErr bool
 	}{
 		{
@@ -251,13 +251,13 @@ func Test_converter_USD2EUR(t *testing.T) {
 				c := converter{
 					rates: tt.fields.rates,
 				}
-				got, err := c.USD2EUR(tt.args.date, tt.args.v)
+				got, err := c.A2B(tt.args.date, tt.args.v)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("USD2EUR() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("A2B() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if got != tt.want {
-					t.Errorf("USD2EUR() got = %v, want %v", got, tt.want)
+					t.Errorf("A2B() got = %v, want %v", got, tt.want)
 				}
 			},
 		)
@@ -266,17 +266,17 @@ func Test_converter_USD2EUR(t *testing.T) {
 
 func Test_converter_EUR2USD(t *testing.T) {
 	type fields struct {
-		rates USD2EURRates
+		rates DailyRates
 	}
 	type args struct {
 		date time.Time
-		v    float32
+		v    float64
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    float32
+		want    float64
 		wantErr bool
 	}{
 		{
@@ -311,13 +311,13 @@ func Test_converter_EUR2USD(t *testing.T) {
 				c := converter{
 					rates: tt.fields.rates,
 				}
-				got, err := c.EUR2USD(tt.args.date, tt.args.v)
+				got, err := c.B2A(tt.args.date, tt.args.v)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("EUR2USD() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("B2A() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if got != tt.want {
-					t.Errorf("EUR2USD() got = %v, want %v", got, tt.want)
+					t.Errorf("B2A() got = %v, want %v", got, tt.want)
 				}
 			},
 		)
