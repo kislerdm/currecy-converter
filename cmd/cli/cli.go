@@ -133,7 +133,10 @@ func (c CLI) convertRow(r io.Reader, w io.Writer) error {
 
 		amountOut, err := conversionFn(date, amount)
 		if err != nil {
-			return errors.New("conversion error in the row " + strconv.FormatUint(uint64(rowIndex), 10))
+			return errors.New(
+				"conversion error in the row " + strconv.FormatUint(uint64(rowIndex), 10) + ". " +
+					err.Error(),
+			)
 		}
 
 		if err := csvWriter.Write(
