@@ -47,13 +47,28 @@ type DailyRates map[time.Time]float64
 
 // GetRate returns the rate for a given date.
 func (r DailyRates) GetRate(date time.Time) (float64, error) {
+	initialDate := date
 	for isWeekend(date) {
 		date = date.Add(-24 * time.Hour)
 	}
-	v, ok := r[date]
-	if !ok {
-		return 0, errors.New("no rate found for " + date.Format("2006-01-02"))
+
+	const lookBackDays = 7
+	var (
+		v  float64
+		ok bool
+	)
+	for i := 0; i < lookBackDays; i++ {
+		v, ok = r[date]
+		if ok {
+			break
+		}
+		date = date.Add(-24 * time.Hour)
 	}
+
+	if !ok {
+		return 0, errors.New("no rate found for " + initialDate.Format("2006-01-02"))
+	}
+
 	return v, nil
 }
 
